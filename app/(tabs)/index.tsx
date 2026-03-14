@@ -95,8 +95,7 @@ export default function HomeScreen() {
               router.push({
                 pathname: '/user-details',
                 params: {
-                  name: item.name,
-                  email: item.email,
+                  id: item.id.toString(),
                 },
               })
             }>
