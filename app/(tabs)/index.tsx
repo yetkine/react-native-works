@@ -93,10 +93,8 @@ export default function HomeScreen() {
             style={styles.card}
             onPress={() =>
               router.push({
-                pathname: '/user-details',
-                params: {
-                  id: item.id.toString(),
-                },
+                pathname: '/users/[id]',
+                params: { id: item.id.toString() },
               })
             }>
             <Text style={styles.name}>{item.name}</Text>

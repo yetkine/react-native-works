@@ -5,7 +5,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 
 type UserDetail = {
   id: number;
@@ -48,6 +48,7 @@ export default function UserDetailsScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
+        <Stack.Screen options={{ title: 'Yükleniyor...' }} />
         <ActivityIndicator size="large" />
         <Text style={styles.infoText}>Detay yükleniyor...</Text>
       </View>
@@ -57,6 +58,7 @@ export default function UserDetailsScreen() {
   if (error) {
     return (
       <View style={styles.centered}>
+        <Stack.Screen options={{ title: 'Hata' }} />
         <Text style={styles.errorText}>{error}</Text>
       </View>
     );
@@ -65,6 +67,7 @@ export default function UserDetailsScreen() {
   if (!user) {
     return (
       <View style={styles.centered}>
+        <Stack.Screen options={{ title: 'Bulunamadı' }} />
         <Text style={styles.errorText}>Kullanıcı bulunamadı.</Text>
       </View>
     );
@@ -72,9 +75,14 @@ export default function UserDetailsScreen() {
 
   return (
     <View style={styles.container}>
+      <Stack.Screen options={{ title: user.name }} />
+
       <Text style={styles.title}>Kullanıcı Detayı</Text>
 
       <View style={styles.card}>
+        <Text style={styles.label}>ID:</Text>
+        <Text style={styles.value}>{user.id}</Text>
+
         <Text style={styles.label}>İsim:</Text>
         <Text style={styles.value}>{user.name}</Text>
 
