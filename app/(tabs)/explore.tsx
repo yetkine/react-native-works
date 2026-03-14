@@ -10,6 +10,12 @@ export default function ExploreScreen() {
       <Pressable style={styles.button} onPress={() => router.push('/register')}>
         <Text style={styles.buttonText}>Register Ekranına Git</Text>
       </Pressable>
+
+      <Pressable
+        style={[styles.button, styles.secondButton]}
+        onPress={() => router.push('../login')}>
+        <Text style={styles.buttonText}>Login Ekranına Git</Text>
+      </Pressable>
     </View>
   );
 }
@@ -27,12 +33,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 20,
     color: 'black',
+    textAlign: 'center',
   },
   button: {
     backgroundColor: 'black',
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 10,
+    marginBottom: 12,
+    minWidth: 220,
+    alignItems: 'center',
+  },
+  secondButton: {
+    backgroundColor: '#333',
   },
   buttonText: {
     color: 'white',
