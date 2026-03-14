@@ -8,6 +8,7 @@ import {
   TextInput,
   Pressable,
 } from 'react-native';
+import { router } from 'expo-router';
 
 type User = {
   id: number;
@@ -88,10 +89,20 @@ export default function HomeScreen() {
           <Text style={styles.emptyText}>Eşleşen kullanıcı bulunamadı.</Text>
         }
         renderItem={({ item }) => (
-          <View style={styles.card}>
+          <Pressable
+            style={styles.card}
+            onPress={() =>
+              router.push({
+                pathname: '/user-details',
+                params: {
+                  name: item.name,
+                  email: item.email,
+                },
+              })
+            }>
             <Text style={styles.name}>{item.name}</Text>
             <Text style={styles.email}>{item.email}</Text>
-          </View>
+          </Pressable>
         )}
         contentContainerStyle={styles.listContent}
       />
