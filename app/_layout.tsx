@@ -9,10 +9,7 @@ export default function RootLayout() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="users/[id]" options={{ headerShown: true }} />
-        <Stack.Screen
-          name="modal"
-          options={{ presentation: 'modal', title: 'Modal' }}
-        />
+        <Stack.Screen name="register" options={{ title: 'Kayıt Ol', headerShown: true }} />
       </Stack>
       <StatusBar style="dark" />
     </ThemeProvider>

@@ -1,28 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { router } from 'expo-router';
 
 export default function ExploreScreen() {
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    console.log('Explore ekranı açıldı');
-
-    return () => {
-      console.log('Explore ekranı kapandı');
-    };
-  }, []);
-
-  useEffect(() => {
-    console.log('Count değişti:', count);
-  }, [count]);
-
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>useEffect Denemesi</Text>
-      <Text style={styles.countText}>Sayaç: {count}</Text>
+      <Text style={styles.title}>Firebase Auth Denemesi</Text>
 
-      <Pressable style={styles.button} onPress={() => setCount(count + 1)}>
-        <Text style={styles.buttonText}>Arttır</Text>
+      <Pressable style={styles.button} onPress={() => router.push('/register')}>
+        <Text style={styles.buttonText}>Register Ekranına Git</Text>
       </Pressable>
     </View>
   );
@@ -39,11 +25,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 20,
-    color: 'black',
-  },
-  countText: {
-    fontSize: 22,
     marginBottom: 20,
     color: 'black',
   },
