@@ -5,6 +5,8 @@ import {
   StyleSheet,
   FlatList,
   ActivityIndicator,
+  TextInput,
+  Pressable,
 } from 'react-native';
 
 type User = {
@@ -17,6 +19,7 @@ export default function HomeScreen() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [searchText, setSearchText] = useState('');
 
   useEffect(() => {
     fetchUsers();
@@ -38,6 +41,10 @@ export default function HomeScreen() {
     }
   };
 
+  const filteredUsers = users.filter((user) =>
+    user.name.toLowerCase().includes(searchText.toLowerCase())
+  );
+
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -51,6 +58,10 @@ export default function HomeScreen() {
     return (
       <View style={styles.centered}>
         <Text style={styles.errorText}>{error}</Text>
+
+        <Pressable style={styles.retryButton} onPress={fetchUsers}>
+          <Text style={styles.retryButtonText}>Tekrar Dene</Text>
+        </Pressable>
       </View>
     );
   }
@@ -59,15 +70,30 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Kullanıcı Listesi</Text>
 
+      <TextInput
+        style={styles.input}
+        placeholder="İsim ara..."
+        value={searchText}
+        onChangeText={setSearchText}
+      />
+
+      <Pressable style={styles.refreshButton} onPress={fetchUsers}>
+        <Text style={styles.refreshButtonText}>Yenile</Text>
+      </Pressable>
+
       <FlatList
-        data={users}
+        data={filteredUsers}
         keyExtractor={(item) => item.id.toString()}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>Eşleşen kullanıcı bulunamadı.</Text>
+        }
         renderItem={({ item }) => (
           <View style={styles.card}>
             <Text style={styles.name}>{item.name}</Text>
             <Text style={styles.email}>{item.email}</Text>
           </View>
         )}
+        contentContainerStyle={styles.listContent}
       />
     </View>
   );
@@ -94,6 +120,38 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: 'black',
   },
+  input: {
+    borderWidth: 1,
+    borderColor: '#999',
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 15,
+    fontSize: 16,
+  },
+  refreshButton: {
+    backgroundColor: 'black',
+    padding: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  refreshButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  retryButton: {
+    backgroundColor: 'black',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    marginTop: 20,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
   infoText: {
     marginTop: 15,
     fontSize: 16,
@@ -103,6 +161,15 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: 'red',
     textAlign: 'center',
+  },
+  emptyText: {
+    textAlign: 'center',
+    fontSize: 16,
+    color: '#666',
+    marginTop: 20,
+  },
+  listContent: {
+    paddingBottom: 20,
   },
   card: {
     backgroundColor: '#f5f5f5',
