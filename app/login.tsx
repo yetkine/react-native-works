@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Pressable, Alert } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase/config';
+import { router } from 'expo-router';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -22,6 +23,7 @@ export default function LoginScreen() {
       Alert.alert('Başarılı', 'Giriş işlemi tamamlandı.');
       setEmail('');
       setPassword('');
+      router.replace('../profile');
     } catch (error: any) {
       Alert.alert('Giriş Hatası', error.message);
     } finally {

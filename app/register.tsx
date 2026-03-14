@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Pressable, Alert } from 'react-native';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase/config';
+import { router } from 'expo-router';
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState('');
@@ -27,6 +28,7 @@ export default function RegisterScreen() {
       Alert.alert('Başarılı', 'Kayıt işlemi tamamlandı.');
       setEmail('');
       setPassword('');
+      router.replace('../login');
     } catch (error: any) {
       Alert.alert('Kayıt Hatası', error.message);
     } finally {

@@ -16,6 +16,12 @@ export default function ExploreScreen() {
         onPress={() => router.push('../login')}>
         <Text style={styles.buttonText}>Login Ekranına Git</Text>
       </Pressable>
+
+      <Pressable
+        style={[styles.button, styles.thirdButton]}
+        onPress={() => router.push('../profile')}>
+        <Text style={styles.buttonText}>Profile Ekranına Git</Text>
+      </Pressable>
     </View>
   );
 }
@@ -52,4 +58,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  thirdButton: {
+    backgroundColor: '#555',
+    },
 });
