@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable, Alert } from 'react-native';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../firebase/config';
+import { View, Text, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
+import { loginWithEmail } from './services/authService';
+import CustomInput from './components/CustomInput';
+import PrimaryButton from './components/PrimaryButton';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -10,20 +11,15 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert('Hata', 'E-posta ve şifre alanları boş bırakılamaz.');
-      return;
-    }
-
     try {
       setLoading(true);
 
-      await signInWithEmailAndPassword(auth, email, password);
+      await loginWithEmail(email, password);
 
       Alert.alert('Başarılı', 'Giriş işlemi tamamlandı.');
       setEmail('');
       setPassword('');
-      router.replace('../profile');
+      router.replace('/profile');
     } catch (error: any) {
       Alert.alert('Giriş Hatası', error.message);
     } finally {
@@ -35,8 +31,7 @@ export default function LoginScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Giriş Yap</Text>
 
-      <TextInput
-        style={styles.input}
+      <CustomInput
         placeholder="E-posta"
         value={email}
         onChangeText={setEmail}
@@ -44,19 +39,18 @@ export default function LoginScreen() {
         keyboardType="email-address"
       />
 
-      <TextInput
-        style={styles.input}
+      <CustomInput
         placeholder="Şifre"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
       />
 
-      <Pressable style={styles.button} onPress={handleLogin} disabled={loading}>
-        <Text style={styles.buttonText}>
-          {loading ? 'Giriş Yapılıyor...' : 'Giriş Yap'}
-        </Text>
-      </Pressable>
+      <PrimaryButton
+        title={loading ? 'Giriş Yapılıyor...' : 'Giriş Yap'}
+        onPress={handleLogin}
+        disabled={loading}
+      />
     </View>
   );
 }
@@ -74,24 +68,5 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     textAlign: 'center',
     color: 'black',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#999',
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 16,
-    fontSize: 16,
-  },
-  button: {
-    backgroundColor: 'black',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
 });

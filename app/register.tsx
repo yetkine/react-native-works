@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable, Alert } from 'react-native';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../firebase/config';
+import { View, Text, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
+import { registerWithEmail } from './services/authService';
+import CustomInput from './components/CustomInput';
+import PrimaryButton from './components/PrimaryButton';
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState('');
@@ -10,25 +11,15 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert('Hata', 'E-posta ve şifre alanları boş bırakılamaz.');
-      return;
-    }
-
-    if (password.length < 6) {
-      Alert.alert('Hata', 'Şifre en az 6 karakter olmalı.');
-      return;
-    }
-
     try {
       setLoading(true);
 
-      await createUserWithEmailAndPassword(auth, email, password);
+      await registerWithEmail(email, password);
 
-      Alert.alert('Başarılı', 'Kayıt işlemi tamamlandı.');
+      Alert.alert('Başarılı', 'Kayıt işlemi tamamlandı. Şimdi giriş yapabilirsin.');
       setEmail('');
       setPassword('');
-      router.replace('../login');
+      router.replace('/login');
     } catch (error: any) {
       Alert.alert('Kayıt Hatası', error.message);
     } finally {
@@ -40,8 +31,7 @@ export default function RegisterScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Kayıt Ol</Text>
 
-      <TextInput
-        style={styles.input}
+      <CustomInput
         placeholder="E-posta"
         value={email}
         onChangeText={setEmail}
@@ -49,19 +39,18 @@ export default function RegisterScreen() {
         keyboardType="email-address"
       />
 
-      <TextInput
-        style={styles.input}
+      <CustomInput
         placeholder="Şifre"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
       />
 
-      <Pressable style={styles.button} onPress={handleRegister} disabled={loading}>
-        <Text style={styles.buttonText}>
-          {loading ? 'Kayıt Yapılıyor...' : 'Kayıt Ol'}
-        </Text>
-      </Pressable>
+      <PrimaryButton
+        title={loading ? 'Kayıt Yapılıyor...' : 'Kayıt Ol'}
+        onPress={handleRegister}
+        disabled={loading}
+      />
     </View>
   );
 }
@@ -79,24 +68,5 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     textAlign: 'center',
     color: 'black',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#999',
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 16,
-    fontSize: 16,
-  },
-  button: {
-    backgroundColor: 'black',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
 });

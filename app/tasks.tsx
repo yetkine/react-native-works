@@ -17,6 +17,8 @@ import {
   deleteTaskFromFirestore,
   toggleTaskCompletedInFirestore,
 } from './services/taskService';
+import CustomInput from './components/CustomInput';
+import PrimaryButton from './components/PrimaryButton';
 
 export default function TasksScreen() {
   const [taskTitle, setTaskTitle] = useState('');
@@ -82,18 +84,17 @@ export default function TasksScreen() {
 
       <Text style={styles.title}>Görevlerim</Text>
 
-      <TextInput
-        style={styles.input}
+      <CustomInput
         placeholder="Görev yaz..."
         value={taskTitle}
         onChangeText={setTaskTitle}
       />
 
-      <Pressable style={styles.button} onPress={handleAddTask} disabled={loading}>
-        <Text style={styles.buttonText}>
-          {loading ? 'Kaydediliyor...' : 'Görevi Kaydet'}
-        </Text>
-      </Pressable>
+      <PrimaryButton
+        title={loading ? 'Kaydediliyor...' : 'Görevi Kaydet'}
+        onPress={handleAddTask}
+        disabled={loading}
+      />
 
       {fetchingTasks ? (
         <View style={styles.centered}>
