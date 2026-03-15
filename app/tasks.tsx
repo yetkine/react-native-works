@@ -9,28 +9,14 @@ import {
   FlatList,
   ActivityIndicator,
 } from 'react-native';
-import {
-  addDoc,
-  collection,
-  serverTimestamp,
-  query,
-  where,
-  getDocs,
-  orderBy,
-  deleteDoc,
-  doc,
-  updateDoc,
-} from 'firebase/firestore';
-import { auth, db } from '../firebase/config';
 import { Stack } from 'expo-router';
-
-type Task = {
-  id: string;
-  title: string;
-  completed: boolean;
-  userId: string;
-  userEmail: string;
-};
+import { Task } from './types/task';
+import {
+  fetchUserTasks,
+  addTaskToFirestore,
+  deleteTaskFromFirestore,
+  toggleTaskCompletedInFirestore,
+} from './services/taskService';
 
 export default function TasksScreen() {
   const [taskTitle, setTaskTitle] = useState('');
@@ -38,36 +24,14 @@ export default function TasksScreen() {
   const [fetchingTasks, setFetchingTasks] = useState(true);
   const [tasks, setTasks] = useState<Task[]>([]);
 
-  const currentUser = auth.currentUser;
-
   useEffect(() => {
-    fetchTasks();
+    loadTasks();
   }, []);
 
-  const fetchTasks = async () => {
-    const user = auth.currentUser;
-
-    if (!user) {
-      setFetchingTasks(false);
-      return;
-    }
-
+  const loadTasks = async () => {
     try {
       setFetchingTasks(true);
-
-      const q = query(
-        collection(db, 'tasks'),
-        where('userId', '==', user.uid),
-        orderBy('createdAt', 'desc')
-      );
-
-      const querySnapshot = await getDocs(q);
-
-      const fetchedTasks: Task[] = querySnapshot.docs.map((docItem) => ({
-        id: docItem.id,
-        ...(docItem.data() as Omit<Task, 'id'>),
-      }));
-
+      const fetchedTasks = await fetchUserTasks();
       setTasks(fetchedTasks);
     } catch (error: any) {
       Alert.alert('Listeleme Hatası', error.message);
@@ -77,30 +41,12 @@ export default function TasksScreen() {
   };
 
   const handleAddTask = async () => {
-    if (!currentUser) {
-      Alert.alert('Hata', 'Önce giriş yapmalısın.');
-      return;
-    }
-
-    if (!taskTitle.trim()) {
-      Alert.alert('Hata', 'Görev alanı boş bırakılamaz.');
-      return;
-    }
-
     try {
       setLoading(true);
-
-      await addDoc(collection(db, 'tasks'), {
-        title: taskTitle,
-        completed: false,
-        userId: currentUser.uid,
-        userEmail: currentUser.email || '',
-        createdAt: serverTimestamp(),
-      });
-
+      await addTaskToFirestore(taskTitle);
       Alert.alert('Başarılı', 'Görev Firestore’a kaydedildi.');
       setTaskTitle('');
-      fetchTasks();
+      loadTasks();
     } catch (error: any) {
       Alert.alert('Kayıt Hatası', error.message);
     } finally {
@@ -110,21 +56,21 @@ export default function TasksScreen() {
 
   const handleDeleteTask = async (taskId: string) => {
     try {
-      await deleteDoc(doc(db, 'tasks', taskId));
+      await deleteTaskFromFirestore(taskId);
       Alert.alert('Başarılı', 'Görev silindi.');
-      fetchTasks();
+      loadTasks();
     } catch (error: any) {
       Alert.alert('Silme Hatası', error.message);
     }
   };
 
-  const handleToggleCompleted = async (taskId: string, currentCompleted: boolean) => {
+  const handleToggleCompleted = async (
+    taskId: string,
+    currentCompleted: boolean
+  ) => {
     try {
-      await updateDoc(doc(db, 'tasks', taskId), {
-        completed: !currentCompleted,
-      });
-
-      fetchTasks();
+      await toggleTaskCompletedInFirestore(taskId, currentCompleted);
+      loadTasks();
     } catch (error: any) {
       Alert.alert('Güncelleme Hatası', error.message);
     }
