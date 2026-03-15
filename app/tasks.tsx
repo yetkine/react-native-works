@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -40,6 +40,16 @@ export default function TasksScreen() {
     }
   }, [user]);
 
+  const completedCount = useMemo(
+    () => tasks.filter((task) => task.completed).length,
+    [tasks]
+  );
+
+  const pendingCount = useMemo(
+    () => tasks.filter((task) => !task.completed).length,
+    [tasks]
+  );
+
   const loadTasks = async () => {
     try {
       setFetchingTasks(true);
@@ -56,7 +66,6 @@ export default function TasksScreen() {
     try {
       setLoading(true);
       await addTaskToFirestore(taskTitle);
-      Alert.alert('Başarılı', 'Görev Firestore’a kaydedildi.');
       setTaskTitle('');
       loadTasks();
     } catch (error: any) {
@@ -69,7 +78,6 @@ export default function TasksScreen() {
   const handleDeleteTask = async (taskId: string) => {
     try {
       await deleteTaskFromFirestore(taskId);
-      Alert.alert('Başarılı', 'Görev silindi.');
       loadTasks();
     } catch (error: any) {
       Alert.alert('Silme Hatası', error.message);
@@ -90,8 +98,9 @@ export default function TasksScreen() {
 
   if (authLoading) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Yükleniyor...</Text>
+      <View style={styles.loadingScreen}>
+        <ActivityIndicator size="large" />
+        <Text style={styles.loadingText}>Oturum kontrol ediliyor...</Text>
       </View>
     );
   }
@@ -104,10 +113,30 @@ export default function TasksScreen() {
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Görevler' }} />
 
-      <Text style={styles.title}>Görevlerim</Text>
+      <View style={styles.headerBlock}>
+        <Text style={styles.title}>Görevlerim</Text>
+        <Text style={styles.subtitle}>{user.email}</Text>
+      </View>
+
+      <View style={styles.summaryRow}>
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryNumber}>{tasks.length}</Text>
+          <Text style={styles.summaryLabel}>Toplam</Text>
+        </View>
+
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryNumber}>{pendingCount}</Text>
+          <Text style={styles.summaryLabel}>Bekleyen</Text>
+        </View>
+
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryNumber}>{completedCount}</Text>
+          <Text style={styles.summaryLabel}>Tamamlanan</Text>
+        </View>
+      </View>
 
       <CustomInput
-        placeholder="Görev yaz..."
+        placeholder="Yeni görev ekle..."
         value={taskTitle}
         onChangeText={setTaskTitle}
       />
@@ -128,17 +157,37 @@ export default function TasksScreen() {
           data={tasks}
           keyExtractor={(item) => item.id}
           ListEmptyComponent={
-            <Text style={styles.emptyText}>Henüz görev eklenmedi.</Text>
+            <View style={styles.emptyWrapper}>
+              <Text style={styles.emptyEmoji}>📝</Text>
+              <Text style={styles.emptyTitle}>Henüz görev eklenmedi</Text>
+              <Text style={styles.emptyDescription}>
+                Yukarıdan ilk görevini ekleyerek başlayabilirsin.
+              </Text>
+            </View>
           }
           renderItem={({ item }) => (
             <View style={styles.taskCard}>
-              <Text
-                style={[
-                  styles.taskText,
-                  item.completed && styles.completedTaskText,
-                ]}>
-                {item.title}
-              </Text>
+              <View style={styles.taskTopRow}>
+                <Text
+                  style={[
+                    styles.taskText,
+                    item.completed && styles.completedTaskText,
+                  ]}>
+                  {item.title}
+                </Text>
+
+                <View
+                  style={[
+                    styles.statusBadge,
+                    item.completed
+                      ? styles.completedBadge
+                      : styles.pendingBadge,
+                  ]}>
+                  <Text style={styles.statusBadgeText}>
+                    {item.completed ? 'Bitti' : 'Açık'}
+                  </Text>
+                </View>
+              </View>
 
               <View style={styles.actionsRow}>
                 <Pressable
@@ -158,6 +207,7 @@ export default function TasksScreen() {
             </View>
           )}
           contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
         />
       )}
     </View>
@@ -165,18 +215,60 @@ export default function TasksScreen() {
 }
 
 const styles = StyleSheet.create({
+  loadingScreen: {
+    flex: 1,
+    backgroundColor: 'white',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: 'black',
+  },
   container: {
     flex: 1,
     backgroundColor: 'white',
     padding: 20,
     paddingTop: 60,
   },
+  headerBlock: {
+    marginBottom: 18,
+  },
   title: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
     color: 'black',
+    textAlign: 'center',
+  },
+  subtitle: {
+    marginTop: 6,
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 18,
+  },
+  summaryCard: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  summaryNumber: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: 'black',
+  },
+  summaryLabel: {
+    marginTop: 4,
+    fontSize: 13,
+    color: '#666',
   },
   centered: {
     marginTop: 30,
@@ -187,11 +279,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: 'black',
   },
-  emptyText: {
-    textAlign: 'center',
-    fontSize: 16,
+  emptyWrapper: {
+    marginTop: 40,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  emptyEmoji: {
+    fontSize: 36,
+    marginBottom: 10,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'black',
+    marginBottom: 6,
+  },
+  emptyDescription: {
+    fontSize: 15,
     color: '#666',
-    marginTop: 30,
+    textAlign: 'center',
+    lineHeight: 22,
   },
   listContent: {
     paddingTop: 20,
@@ -200,17 +307,41 @@ const styles = StyleSheet.create({
   taskCard: {
     backgroundColor: '#f5f5f5',
     padding: 15,
-    borderRadius: 10,
+    borderRadius: 12,
     marginBottom: 12,
   },
+  taskTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+    marginBottom: 12,
+    alignItems: 'flex-start',
+  },
   taskText: {
+    flex: 1,
     fontSize: 17,
     color: 'black',
-    marginBottom: 12,
+    lineHeight: 24,
   },
   completedTaskText: {
     textDecorationLine: 'line-through',
     color: 'gray',
+  },
+  statusBadge: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+  },
+  pendingBadge: {
+    backgroundColor: '#e8e8e8',
+  },
+  completedBadge: {
+    backgroundColor: '#d7f0d8',
+  },
+  statusBadgeText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#333',
   },
   actionsRow: {
     flexDirection: 'row',
