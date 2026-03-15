@@ -17,6 +17,9 @@ import {
   where,
   getDocs,
   orderBy,
+  deleteDoc,
+  doc,
+  updateDoc,
 } from 'firebase/firestore';
 import { auth, db } from '../firebase/config';
 import { Stack } from 'expo-router';
@@ -60,9 +63,9 @@ export default function TasksScreen() {
 
       const querySnapshot = await getDocs(q);
 
-      const fetchedTasks: Task[] = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...(doc.data() as Omit<Task, 'id'>),
+      const fetchedTasks: Task[] = querySnapshot.docs.map((docItem) => ({
+        id: docItem.id,
+        ...(docItem.data() as Omit<Task, 'id'>),
       }));
 
       setTasks(fetchedTasks);
@@ -105,6 +108,28 @@ export default function TasksScreen() {
     }
   };
 
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      await deleteDoc(doc(db, 'tasks', taskId));
+      Alert.alert('Başarılı', 'Görev silindi.');
+      fetchTasks();
+    } catch (error: any) {
+      Alert.alert('Silme Hatası', error.message);
+    }
+  };
+
+  const handleToggleCompleted = async (taskId: string, currentCompleted: boolean) => {
+    try {
+      await updateDoc(doc(db, 'tasks', taskId), {
+        completed: !currentCompleted,
+      });
+
+      fetchTasks();
+    } catch (error: any) {
+      Alert.alert('Güncelleme Hatası', error.message);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Görevler' }} />
@@ -138,7 +163,29 @@ export default function TasksScreen() {
           }
           renderItem={({ item }) => (
             <View style={styles.taskCard}>
-              <Text style={styles.taskText}>{item.title}</Text>
+              <Text
+                style={[
+                  styles.taskText,
+                  item.completed && styles.completedTaskText,
+                ]}>
+                {item.title}
+              </Text>
+
+              <View style={styles.actionsRow}>
+                <Pressable
+                  style={[styles.smallButton, styles.completeButton]}
+                  onPress={() => handleToggleCompleted(item.id, item.completed)}>
+                  <Text style={styles.smallButtonText}>
+                    {item.completed ? 'Geri Al' : 'Tamamla'}
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  style={[styles.smallButton, styles.deleteButton]}
+                  onPress={() => handleDeleteTask(item.id)}>
+                  <Text style={styles.smallButtonText}>Sil</Text>
+                </Pressable>
+              </View>
             </View>
           )}
           contentContainerStyle={styles.listContent}
@@ -209,5 +256,30 @@ const styles = StyleSheet.create({
   taskText: {
     fontSize: 17,
     color: 'black',
+    marginBottom: 12,
+  },
+  completedTaskText: {
+    textDecorationLine: 'line-through',
+    color: 'gray',
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  smallButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  completeButton: {
+    backgroundColor: '#333',
+  },
+  deleteButton: {
+    backgroundColor: '#d9534f',
+  },
+  smallButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 });
