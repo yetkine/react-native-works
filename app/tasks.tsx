@@ -22,6 +22,7 @@ import useAuth from './hooks/useAuth';
 
 export default function TasksScreen() {
   const [taskTitle, setTaskTitle] = useState('');
+  const [searchText, setSearchText] = useState('');
   const [loading, setLoading] = useState(false);
   const [fetchingTasks, setFetchingTasks] = useState(true);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -39,6 +40,12 @@ export default function TasksScreen() {
       loadTasks();
     }
   }, [user]);
+
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((task) =>
+      task.title.toLowerCase().includes(searchText.toLowerCase())
+    );
+  }, [tasks, searchText]);
 
   const completedCount = useMemo(
     () => tasks.filter((task) => task.completed).length,
@@ -147,6 +154,12 @@ export default function TasksScreen() {
         disabled={loading}
       />
 
+      <CustomInput
+        placeholder="Görevlerde ara..."
+        value={searchText}
+        onChangeText={setSearchText}
+      />
+
       {fetchingTasks ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" />
@@ -154,14 +167,20 @@ export default function TasksScreen() {
         </View>
       ) : (
         <FlatList
-          data={tasks}
+          data={filteredTasks}
           keyExtractor={(item) => item.id}
           ListEmptyComponent={
             <View style={styles.emptyWrapper}>
               <Text style={styles.emptyEmoji}>📝</Text>
-              <Text style={styles.emptyTitle}>Henüz görev eklenmedi</Text>
+              <Text style={styles.emptyTitle}>
+                {tasks.length === 0
+                  ? 'Henüz görev eklenmedi'
+                  : 'Aramana uygun görev bulunamadı'}
+              </Text>
               <Text style={styles.emptyDescription}>
-                Yukarıdan ilk görevini ekleyerek başlayabilirsin.
+                {tasks.length === 0
+                  ? 'Yukarıdan ilk görevini ekleyerek başlayabilirsin.'
+                  : 'Farklı bir kelime ile tekrar arama yapabilirsin.'}
               </Text>
             </View>
           }
