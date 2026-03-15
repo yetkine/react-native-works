@@ -1,16 +1,79 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable, Alert } from 'react-native';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  Pressable,
+  Alert,
+  FlatList,
+  ActivityIndicator,
+} from 'react-native';
+import {
+  addDoc,
+  collection,
+  serverTimestamp,
+  query,
+  where,
+  getDocs,
+  orderBy,
+} from 'firebase/firestore';
 import { auth, db } from '../firebase/config';
 import { Stack } from 'expo-router';
+
+type Task = {
+  id: string;
+  title: string;
+  completed: boolean;
+  userId: string;
+  userEmail: string;
+};
 
 export default function TasksScreen() {
   const [taskTitle, setTaskTitle] = useState('');
   const [loading, setLoading] = useState(false);
+  const [fetchingTasks, setFetchingTasks] = useState(true);
+  const [tasks, setTasks] = useState<Task[]>([]);
+
+  const currentUser = auth.currentUser;
+
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  const fetchTasks = async () => {
+    const user = auth.currentUser;
+
+    if (!user) {
+      setFetchingTasks(false);
+      return;
+    }
+
+    try {
+      setFetchingTasks(true);
+
+      const q = query(
+        collection(db, 'tasks'),
+        where('userId', '==', user.uid),
+        orderBy('createdAt', 'desc')
+      );
+
+      const querySnapshot = await getDocs(q);
+
+      const fetchedTasks: Task[] = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...(doc.data() as Omit<Task, 'id'>),
+      }));
+
+      setTasks(fetchedTasks);
+    } catch (error: any) {
+      Alert.alert('Listeleme Hatası', error.message);
+    } finally {
+      setFetchingTasks(false);
+    }
+  };
 
   const handleAddTask = async () => {
-    const currentUser = auth.currentUser;
-
     if (!currentUser) {
       Alert.alert('Hata', 'Önce giriş yapmalısın.');
       return;
@@ -34,6 +97,7 @@ export default function TasksScreen() {
 
       Alert.alert('Başarılı', 'Görev Firestore’a kaydedildi.');
       setTaskTitle('');
+      fetchTasks();
     } catch (error: any) {
       Alert.alert('Kayıt Hatası', error.message);
     } finally {
@@ -43,9 +107,9 @@ export default function TasksScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: 'Görev Ekle' }} />
+      <Stack.Screen options={{ title: 'Görevler' }} />
 
-      <Text style={styles.title}>Yeni Görev</Text>
+      <Text style={styles.title}>Görevlerim</Text>
 
       <TextInput
         style={styles.input}
@@ -59,6 +123,27 @@ export default function TasksScreen() {
           {loading ? 'Kaydediliyor...' : 'Görevi Kaydet'}
         </Text>
       </Pressable>
+
+      {fetchingTasks ? (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" />
+          <Text style={styles.infoText}>Görevler yükleniyor...</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={tasks}
+          keyExtractor={(item) => item.id}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>Henüz görev eklenmedi.</Text>
+          }
+          renderItem={({ item }) => (
+            <View style={styles.taskCard}>
+              <Text style={styles.taskText}>{item.title}</Text>
+            </View>
+          )}
+          contentContainerStyle={styles.listContent}
+        />
+      )}
     </View>
   );
 }
@@ -67,13 +152,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'white',
-    justifyContent: 'center',
     padding: 20,
+    paddingTop: 60,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 24,
+    marginBottom: 20,
     textAlign: 'center',
     color: 'black',
   },
@@ -90,10 +175,39 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
+    marginBottom: 20,
   },
   buttonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  centered: {
+    marginTop: 30,
+    alignItems: 'center',
+  },
+  infoText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: 'black',
+  },
+  emptyText: {
+    textAlign: 'center',
+    fontSize: 16,
+    color: '#666',
+    marginTop: 30,
+  },
+  listContent: {
+    paddingBottom: 20,
+  },
+  taskCard: {
+    backgroundColor: '#f5f5f5',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+  taskText: {
+    fontSize: 17,
+    color: 'black',
   },
 });
