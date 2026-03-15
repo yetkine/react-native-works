@@ -1,50 +1,118 @@
-# Welcome to your Expo app 👋
+# TaskFlow Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+TaskFlow Mobile is a React Native mobile application built with Expo and TypeScript.  
+It allows users to register, log in, and manage their personal tasks with Firebase Authentication and Firestore.
 
-## Get started
+This project was built to improve my React Native skills and to create a portfolio-ready mobile application with real user flows, authentication, database integration, and clean UI structure.
 
-1. Install dependencies
+## Features
 
-   ```bash
-   npm install
-   ```
+- User registration with Firebase Authentication
+- User login and logout
+- Auth-protected screens
+- Create tasks
+- List tasks from Firestore
+- Update task status (completed / pending)
+- Delete tasks
+- User-specific task data
+- Loading, empty state, and simple UI polish
+- Reusable input and button components
 
-2. Start the app
+## Tech Stack
 
-   ```bash
-   npx expo start
-   ```
+- React Native
+- Expo
+- TypeScript
+- Firebase Authentication
+- Cloud Firestore
+- Expo Router
+- Git & GitHub
 
-In the output, you'll find options to open the app in a
+## Screens
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- Login Screen
+- Register Screen
+- Profile Screen
+- Tasks Screen
+- User List Screen
+- User Detail Screen
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Firebase Features
 
-## Get a fresh project
+- Email/password authentication
+- Firestore database integration
+- User-based task filtering
+- Task create / read / update / delete operations
 
-When you're ready, run:
+## Project Structure
 
-```bash
-npm run reset-project
-```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+app/
+  (tabs)/
+    index.tsx
+    explore.tsx
+  hooks/
+    useAuth.ts
+  services/
+    authService.ts
+    taskService.ts
+  types/
+    task.ts
+  users/
+    [id].tsx
+  login.tsx
+  register.tsx
+  profile.tsx
+  tasks.tsx
 
-## Learn more
+components/
+  CustomInput.tsx
+  PrimaryButton.tsx
 
-To learn more about developing your project with Expo, look at the following resources:
+firebase/
+  config.ts
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
 
-## Join the community
+## Getting Started
 
-Join our community of developers creating universal apps.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Clone the repository
+
+Install dependencies
+
+npm install
+
+Start the Expo development server
+
+npx expo start
+
+Create a Firebase project
+
+Enable Authentication (Email/Password)
+
+Enable Firestore Database
+
+Add your Firebase config into:
+
+firebase/config.ts
+
+Future Improvements
+
+Better task filtering
+
+Due date support
+
+Task categories
+
+Better form validation
+
+Improved design system
+
+Global auth context
+
+Deployment build preparation
+
+Purpose
+
+This project was created as a hands-on React Native learning project and evolved into a portfolio-ready mobile app.
+It demonstrates mobile UI development, Firebase integration, REST API usage, navigation, authentication flow, and clean component/service structure.
