@@ -3,13 +3,12 @@ import {
   View,
   Text,
   StyleSheet,
-  TextInput,
-  Pressable,
   Alert,
   FlatList,
   ActivityIndicator,
+  Pressable,
 } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { Task } from './types/task';
 import {
   fetchUserTasks,
@@ -19,6 +18,7 @@ import {
 } from './services/taskService';
 import CustomInput from './components/CustomInput';
 import PrimaryButton from './components/PrimaryButton';
+import useAuth from './hooks/useAuth';
 
 export default function TasksScreen() {
   const [taskTitle, setTaskTitle] = useState('');
@@ -26,9 +26,19 @@ export default function TasksScreen() {
   const [fetchingTasks, setFetchingTasks] = useState(true);
   const [tasks, setTasks] = useState<Task[]>([]);
 
+  const { user, authLoading } = useAuth();
+
   useEffect(() => {
-    loadTasks();
-  }, []);
+    if (!authLoading && !user) {
+      router.replace('/login');
+    }
+  }, [authLoading, user]);
+
+  useEffect(() => {
+    if (user) {
+      loadTasks();
+    }
+  }, [user]);
 
   const loadTasks = async () => {
     try {
@@ -77,6 +87,18 @@ export default function TasksScreen() {
       Alert.alert('Güncelleme Hatası', error.message);
     }
   };
+
+  if (authLoading) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Yükleniyor...</Text>
+      </View>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <View style={styles.container}>
@@ -156,26 +178,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: 'black',
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#999',
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 16,
-    fontSize: 16,
-  },
-  button: {
-    backgroundColor: 'black',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
   centered: {
     marginTop: 30,
     alignItems: 'center',
@@ -192,6 +194,7 @@ const styles = StyleSheet.create({
     marginTop: 30,
   },
   listContent: {
+    paddingTop: 20,
     paddingBottom: 20,
   },
   taskCard: {

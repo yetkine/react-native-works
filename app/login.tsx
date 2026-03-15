@@ -1,14 +1,23 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { loginWithEmail } from './services/authService';
 import CustomInput from './components/CustomInput';
 import PrimaryButton from './components/PrimaryButton';
+import useAuth from './hooks/useAuth';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const { user, authLoading } = useAuth();
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace('/profile');
+    }
+  }, [authLoading, user]);
 
   const handleLogin = async () => {
     try {
@@ -26,6 +35,14 @@ export default function LoginScreen() {
       setLoading(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Yükleniyor...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>

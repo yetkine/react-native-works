@@ -1,25 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
-import { onAuthStateChanged, signOut, User } from 'firebase/auth';
-import { auth } from '../firebase/config';
 import { router, Stack } from 'expo-router';
+import { logoutUser } from './services/authService';
+import useAuth from './hooks/useAuth';
 
 export default function ProfileScreen() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, authLoading } = useAuth();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+    if (!authLoading && !user) {
+      router.replace('/login');
+    }
+  }, [authLoading, user]);
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      await logoutUser();
       Alert.alert('Başarılı', 'Çıkış yapıldı.');
       router.replace('/login');
     } catch (error: any) {
@@ -27,7 +23,7 @@ export default function ProfileScreen() {
     }
   };
 
-  if (loading) {
+  if (authLoading) {
     return (
       <View style={styles.container}>
         <Stack.Screen options={{ title: 'Yükleniyor...' }} />
@@ -37,16 +33,7 @@ export default function ProfileScreen() {
   }
 
   if (!user) {
-    return (
-      <View style={styles.container}>
-        <Stack.Screen options={{ title: 'Oturum Yok' }} />
-        <Text style={styles.title}>Aktif kullanıcı bulunamadı.</Text>
-
-        <Pressable style={styles.button} onPress={() => router.replace('/login')}>
-          <Text style={styles.buttonText}>Login Ekranına Git</Text>
-        </Pressable>
-      </View>
-    );
+    return null;
   }
 
   return (
