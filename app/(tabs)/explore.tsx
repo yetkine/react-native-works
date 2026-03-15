@@ -22,6 +22,12 @@ export default function ExploreScreen() {
         onPress={() => router.push('../profile')}>
         <Text style={styles.buttonText}>Profile Ekranına Git</Text>
       </Pressable>
+
+      <Pressable
+        style={[styles.button, styles.fourthButton]}
+        onPress={() => router.push('/tasks')}>
+        <Text style={styles.buttonText}>Tasks Ekranına Git</Text>
+      </Pressable>
     </View>
   );
 }
@@ -59,6 +65,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   thirdButton: {
-    backgroundColor: '#555',
+    backgroundColor: '#931',
     },
+    fourthButton: {
+    backgroundColor: '#809',
+  },
 });

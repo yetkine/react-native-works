@@ -12,6 +12,13 @@ export default function RootLayout() {
         <Stack.Screen name="register" options={{ title: 'Kayıt Ol', headerShown: true }} />
         <Stack.Screen name="login" options={{ title: 'Giriş Yap', headerShown: true }} />
         <Stack.Screen name="profile" options={{ title: 'Profil', headerShown: true }} />
+        <Stack.Screen
+          name="tasks"
+          options={{
+            title: 'Görevler',
+            headerShown: true,
+          }}
+        />
       </Stack>
       <StatusBar style="dark" />
     </ThemeProvider>
