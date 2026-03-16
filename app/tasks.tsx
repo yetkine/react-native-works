@@ -7,6 +7,7 @@ import {
   FlatList,
   ActivityIndicator,
   Pressable,
+  Platform,
 } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { Task } from './types/task';
@@ -21,6 +22,8 @@ import CustomInput from './components/CustomInput';
 import PrimaryButton from './components/PrimaryButton';
 import useAuth from './hooks/useAuth';
 import { useToast } from './context/ToastContext';
+import DateTimePicker from '@react-native-community/datetimepicker';
+
 
 export default function TasksScreen() {
   const [taskTitle, setTaskTitle] = useState('');
@@ -35,6 +38,7 @@ export default function TasksScreen() {
   const { showToast } = useToast();
   const [dueDate, setDueDate] = useState('');
   const [sortType, setSortType] = useState<'newest' | 'oldest' | 'dueDate'>('newest');
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const handleEditTask = (
     taskId: string,
     currentTitle: string,
@@ -195,6 +199,19 @@ export default function TasksScreen() {
     return null;
   }
 
+  const formatDate = (date: Date) => {
+    return date.toISOString().split('T')[0];
+  };
+
+  const handleDateChange = (_event: any, selectedDate?: Date) => {
+    if (Platform.OS !== 'ios') {
+      setShowDatePicker(false);
+    }
+
+    if (selectedDate) {
+      setDueDate(formatDate(selectedDate));
+    }
+  };
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Görevler' }} />
@@ -229,12 +246,33 @@ export default function TasksScreen() {
 
       <Text style={styles.dateHint}>Örnek: 2026-03-20</Text>
 
-      <CustomInput
-        placeholder="Son tarih (örn: 2026-03-20)"
-        value={dueDate}
-        onChangeText={setDueDate}
-      />
+      <View style={styles.datePickerWrapper}>
+        <Pressable
+          style={styles.datePickerButton}
+          onPress={() => setShowDatePicker(true)}>
+          <Text style={styles.datePickerButtonText}>
+            {dueDate ? `Son Tarih: ${dueDate}` : 'Son tarih seç'}
+          </Text>
+        </Pressable>
 
+        {dueDate ? (
+          <Pressable style={styles.clearDateButton} onPress={() => setDueDate('')}>
+            <Text style={styles.clearDateButtonText}>Tarihi Temizle</Text>
+          </Pressable>
+        ) : null}
+
+        {showDatePicker && (
+        <DateTimePicker
+          value={dueDate ? new Date(dueDate) : new Date()}
+          mode="date"
+          display="default"
+          onChange={handleDateChange}
+          minimumDate={new Date()}
+        />
+      )}
+      </View>
+
+    
       <PrimaryButton
         title={
           loading
@@ -701,5 +739,27 @@ dateHint: {
   marginBottom: 12,
   fontSize: 12,
   color: '#666',
+},
+datePickerWrapper: {
+  marginBottom: 16,
+},
+datePickerButton: {
+  borderWidth: 1,
+  borderColor: '#999',
+  borderRadius: 10,
+  padding: 14,
+  backgroundColor: 'white',
+},
+datePickerButtonText: {
+  fontSize: 16,
+  color: 'black',
+},
+clearDateButton: {
+  marginTop: 8,
+  alignSelf: 'flex-start',
+},
+clearDateButtonText: {
+  color: '#c62828',
+  fontWeight: '600',
 },
 });
