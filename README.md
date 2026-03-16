@@ -48,6 +48,7 @@ This project was built to improve my React Native skills and to create a portfol
 
 
 app/
+
   (tabs)/
     index.tsx
     explore.tsx
