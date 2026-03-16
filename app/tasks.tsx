@@ -101,6 +101,24 @@ export default function TasksScreen() {
     }
   };
 
+  const isOverdue = (dueDate?: string) => {
+    if (!dueDate) return false;
+
+    const today = new Date();
+    const todayString = today.toISOString().split('T')[0];
+
+    return dueDate < todayString;
+  };
+
+  const isDueToday = (dueDate?: string) => {
+    if (!dueDate) return false;
+
+    const today = new Date();
+    const todayString = today.toISOString().split('T')[0];
+
+    return dueDate === todayString;
+  };
+
   const handleAddTask = async () => {
     try {
       setLoading(true);
@@ -299,7 +317,12 @@ export default function TasksScreen() {
             </View>
           }
           renderItem={({ item }) => (
-            <View style={styles.taskCard}>
+            <View
+              style={[
+                styles.taskCard,
+                isOverdue(item.dueDate) && styles.overdueCard,
+                isDueToday(item.dueDate) && styles.dueTodayCard,
+              ]}>
               <View style={styles.taskTopRow}>
                 <View style={styles.taskContent}>
                   <Text
@@ -311,7 +334,18 @@ export default function TasksScreen() {
                   </Text>
 
                   {item.dueDate ? (
-                    <Text style={styles.dueDateText}>Son tarih: {item.dueDate}</Text>
+                    <Text
+                      style={[
+                        styles.dueDateText,
+                        isOverdue(item.dueDate) && styles.overdueText,
+                        isDueToday(item.dueDate) && styles.dueTodayText,
+                      ]}>
+                      {isOverdue(item.dueDate)
+                        ? `Gecikti: ${item.dueDate}`
+                        : isDueToday(item.dueDate)
+                        ? `Bugün: ${item.dueDate}`
+                        : `Son tarih: ${item.dueDate}`}
+                    </Text>
                   ) : null}
                 </View>
 
@@ -557,4 +591,22 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#666',
   },
+  overdueText: {
+  color: '#c62828',
+  fontWeight: 'bold',
+},
+dueTodayText: {
+  color: '#ef6c00',
+  fontWeight: 'bold',
+},
+overdueCard: {
+  borderWidth: 1,
+  borderColor: '#ef9a9a',
+  backgroundColor: '#fff5f5',
+},
+dueTodayCard: {
+  borderWidth: 1,
+  borderColor: '#ffcc80',
+  backgroundColor: '#fff8f0',
+},
 });
