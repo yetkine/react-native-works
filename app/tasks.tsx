@@ -26,7 +26,7 @@ export default function TasksScreen() {
   const [loading, setLoading] = useState(false);
   const [fetchingTasks, setFetchingTasks] = useState(true);
   const [tasks, setTasks] = useState<Task[]>([]);
-
+  const [filterType, setFilterType] = useState<'all' | 'pending' | 'completed'>('all');
   const { user, authLoading } = useAuth();
 
   useEffect(() => {
@@ -42,10 +42,20 @@ export default function TasksScreen() {
   }, [user]);
 
   const filteredTasks = useMemo(() => {
-    return tasks.filter((task) =>
+    let result = tasks;
+
+    if (filterType === 'pending') {
+      result = result.filter((task) => !task.completed);
+    }
+
+    if (filterType === 'completed') {
+      result = result.filter((task) => task.completed);
+    }
+
+    return result.filter((task) =>
       task.title.toLowerCase().includes(searchText.toLowerCase())
     );
-  }, [tasks, searchText]);
+  }, [tasks, searchText, filterType]);
 
   const completedCount = useMemo(
     () => tasks.filter((task) => task.completed).length,
@@ -160,6 +170,54 @@ export default function TasksScreen() {
         onChangeText={setSearchText}
       />
 
+
+      <View style={styles.filterRow}>
+        <Pressable
+          style={[
+            styles.filterButton,
+            filterType === 'all' && styles.activeFilterButton,
+          ]}
+          onPress={() => setFilterType('all')}>
+          <Text
+            style={[
+              styles.filterButtonText,
+              filterType === 'all' && styles.activeFilterButtonText,
+            ]}>
+            Hepsi
+          </Text>
+        </Pressable>
+
+        <Pressable
+          style={[
+            styles.filterButton,
+            filterType === 'pending' && styles.activeFilterButton,
+          ]}
+          onPress={() => setFilterType('pending')}>
+          <Text
+            style={[
+              styles.filterButtonText,
+              filterType === 'pending' && styles.activeFilterButtonText,
+            ]}>
+            Açık
+          </Text>
+        </Pressable>
+
+        <Pressable
+          style={[
+            styles.filterButton,
+            filterType === 'completed' && styles.activeFilterButton,
+          ]}
+          onPress={() => setFilterType('completed')}>
+          <Text
+            style={[
+              styles.filterButtonText,
+              filterType === 'completed' && styles.activeFilterButtonText,
+            ]}>
+            Tamamlanan
+          </Text>
+        </Pressable>
+      </View>
+
       {fetchingTasks ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" />
@@ -172,10 +230,10 @@ export default function TasksScreen() {
           ListEmptyComponent={
             <View style={styles.emptyWrapper}>
               <Text style={styles.emptyEmoji}>📝</Text>
-              <Text style={styles.emptyTitle}>
+              <Text style={styles.emptyDescription}>
                 {tasks.length === 0
-                  ? 'Henüz görev eklenmedi'
-                  : 'Aramana uygun görev bulunamadı'}
+                  ? 'Yukarıdan ilk görevini ekleyerek başlayabilirsin.'
+                  : 'Arama kelimesini veya filtre seçimini değiştirebilirsin.'}
               </Text>
               <Text style={styles.emptyDescription}>
                 {tasks.length === 0
@@ -381,5 +439,28 @@ const styles = StyleSheet.create({
   smallButtonText: {
     color: 'white',
     fontWeight: 'bold',
+  },
+  filterRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 10,
+  },
+  filterButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: '#f0f0f0',
+    alignItems: 'center',
+  },
+  activeFilterButton: {
+    backgroundColor: 'black',
+  },
+  filterButtonText: {
+    color: '#333',
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  activeFilterButtonText: {
+    color: 'white',
   },
 });
