@@ -20,6 +20,7 @@ import {
 import CustomInput from './components/CustomInput';
 import PrimaryButton from './components/PrimaryButton';
 import useAuth from './hooks/useAuth';
+import { useToast } from './context/ToastContext';
 
 export default function TasksScreen() {
   const [taskTitle, setTaskTitle] = useState('');
@@ -31,6 +32,7 @@ export default function TasksScreen() {
   const { user, authLoading } = useAuth();
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const { showToast } = useToast();
   const handleEditTask = (taskId: string, currentTitle: string) => {
     setTaskTitle(currentTitle);
     setEditingTaskId(taskId);
@@ -98,7 +100,10 @@ export default function TasksScreen() {
 
       if (isEditing && editingTaskId) {
         await updateTaskTitleInFirestore(editingTaskId, taskTitle);
-        Alert.alert('Başarılı', 'Görev güncellendi.');
+        showToast(
+          isEditing ? 'Görev güncellendi.' : 'Görev kaydedildi.',
+          'success'
+        );
         setIsEditing(false);
         setEditingTaskId(null);
       } else {
@@ -109,7 +114,7 @@ export default function TasksScreen() {
       setTaskTitle('');
       loadTasks();
     } catch (error: any) {
-      Alert.alert('Kayıt Hatası', error.message);
+      showToast(error.message, 'error');
     } finally {
       setLoading(false);
     }
@@ -120,7 +125,7 @@ export default function TasksScreen() {
       await deleteTaskFromFirestore(taskId);
       loadTasks();
     } catch (error: any) {
-      Alert.alert('Silme Hatası', error.message);
+      showToast('Görev silindi.', 'success');
     }
   };
 

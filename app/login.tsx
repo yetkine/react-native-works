@@ -5,12 +5,14 @@ import { loginWithEmail } from './services/authService';
 import CustomInput from './components/CustomInput';
 import PrimaryButton from './components/PrimaryButton';
 import useAuth from './hooks/useAuth';
+import { useToast } from './context/ToastContext';
+import { getFirebaseAuthErrorMessage } from './utils/firebaseErrorMessages';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-
+  const { showToast } = useToast();
   const { user, authLoading } = useAuth();
 
   useEffect(() => {
@@ -25,12 +27,12 @@ export default function LoginScreen() {
 
       await loginWithEmail(email, password);
 
-      Alert.alert('Başarılı', 'Giriş işlemi tamamlandı.');
+      showToast('Giriş işlemi tamamlandı.', 'success');
       setEmail('');
       setPassword('');
       router.replace('/profile');
     } catch (error: any) {
-      Alert.alert('Giriş Hatası', error.message);
+       showToast(getFirebaseAuthErrorMessage(error.code), 'error');
     } finally {
       setLoading(false);
     }

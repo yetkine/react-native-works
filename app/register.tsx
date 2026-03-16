@@ -5,12 +5,14 @@ import { registerWithEmail } from './services/authService';
 import CustomInput from './components/CustomInput';
 import PrimaryButton from './components/PrimaryButton';
 import useAuth from './hooks/useAuth';
+import { useToast } from './context/ToastContext';
+import { getFirebaseAuthErrorMessage } from './utils/firebaseErrorMessages';
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-
+  const { showToast } = useToast();
   const { user, authLoading } = useAuth();
 
   useEffect(() => {
@@ -25,12 +27,11 @@ export default function RegisterScreen() {
 
       await registerWithEmail(email, password);
 
-      Alert.alert('Başarılı', 'Kayıt işlemi tamamlandı. Şimdi giriş yapabilirsin.');
-      setEmail('');
+      showToast('Kayıt işlemi tamamlandı. Şimdi giriş yapabilirsin.', 'success');
       setPassword('');
       router.replace('/login');
     } catch (error: any) {
-      Alert.alert('Kayıt Hatası', error.message);
+      showToast(getFirebaseAuthErrorMessage(error.code), 'error');
     } finally {
       setLoading(false);
     }

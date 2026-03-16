@@ -49,22 +49,22 @@ This project was built to improve my React Native skills and to create a portfol
 
 app/
 
-  (tabs)/
+(tabs)/
     index.tsx
     explore.tsx
-  hooks/
-    useAuth.ts
-  services/
-    authService.ts
-    taskService.ts
-  types/
-    task.ts
-  users/
-    [id].tsx
-  login.tsx
-  register.tsx
-  profile.tsx
-  tasks.tsx
+hooks/
+   useAuth.ts
+services/
+   authService.ts
+   taskService.ts
+types/
+   task.ts
+users/
+   [id].tsx
+login.tsx
+register.tsx
+profile.tsx
+tasks.tsx
 
 components/
   CustomInput.tsx
@@ -73,6 +73,22 @@ components/
 firebase/
   config.ts
 
+
+## Architecture Notes
+
+This project uses a cleaner structure compared to a basic tutorial app:
+
+Screens are focused on UI and user interaction
+
+Services handle Firebase logic
+
+Types define shared data models
+
+Context manages global authentication state
+
+Reusable components reduce code duplication
+
+This approach makes the project easier to maintain and closer to a real product environment.
 
 ## Getting Started
 
@@ -97,23 +113,64 @@ Add your Firebase config into:
 
 firebase/config.ts
 
-Future Improvements
+## Current Product Capabilities
 
-Better task filtering
+This version of the project already demonstrates:
+
+Mobile authentication flow
+
+Protected route logic
+
+CRUD operations with Firestore
+
+Search and filtering
+
+Reusable UI components
+
+Global auth state handling
+
+A more maintainable React Native project structure
+
+## Future Improvements
+
+Better Firebase error message mapping
+
+Toast/snackbar improvements
 
 Due date support
 
 Task categories
 
-Better form validation
+Better design system
 
-Improved design system
+Global task context or caching
 
-Global auth context
+Real-time Firestore listeners
 
-Deployment build preparation
+Better responsive polish
 
-Purpose
+Deployment preparation
 
-This project was created as a hands-on React Native learning project and evolved into a portfolio-ready mobile app.
-It demonstrates mobile UI development, Firebase integration, REST API usage, navigation, authentication flow, and clean component/service structure.
+## Purpose
+
+This project was built to improve my React Native skills and to create a more realistic mobile application for portfolio use.
+
+It demonstrates:
+
+React Native fundamentals
+
+Expo-based mobile development
+
+TypeScript usage
+
+REST API integration
+
+Firebase Authentication
+
+Firestore CRUD logic
+
+Navigation and route protection
+
+Reusable component design
+
+Cleaner folder and service structure
