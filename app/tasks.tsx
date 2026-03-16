@@ -34,6 +34,7 @@ export default function TasksScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const { showToast } = useToast();
   const [dueDate, setDueDate] = useState('');
+  const [sortType, setSortType] = useState<'newest' | 'oldest' | 'dueDate'>('newest');
   const handleEditTask = (
     taskId: string,
     currentTitle: string,
@@ -63,8 +64,8 @@ export default function TasksScreen() {
     }
   }, [user]);
 
-  const filteredTasks = useMemo(() => {
-    let result = tasks;
+  const processedTasks = useMemo(() => {
+    let result = [...tasks];
 
     if (filterType === 'pending') {
       result = result.filter((task) => !task.completed);
@@ -74,10 +75,24 @@ export default function TasksScreen() {
       result = result.filter((task) => task.completed);
     }
 
-    return result.filter((task) =>
+    result = result.filter((task) =>
       task.title.toLowerCase().includes(searchText.toLowerCase())
     );
-  }, [tasks, searchText, filterType]);
+
+    if (sortType === 'oldest') {
+      result = [...result].reverse();
+    }
+
+    if (sortType === 'dueDate') {
+      result = [...result].sort((a, b) => {
+        const aDate = a.dueDate || '9999-12-31';
+        const bDate = b.dueDate || '9999-12-31';
+        return aDate.localeCompare(bDate);
+      });
+    }
+
+    return result;
+  }, [tasks, searchText, filterType, sortType]);
 
   const completedCount = useMemo(
     () => tasks.filter((task) => task.completed).length,
@@ -212,6 +227,8 @@ export default function TasksScreen() {
         onChangeText={setTaskTitle}
       />
 
+      <Text style={styles.dateHint}>Örnek: 2026-03-20</Text>
+
       <CustomInput
         placeholder="Son tarih (örn: 2026-03-20)"
         value={dueDate}
@@ -292,6 +309,53 @@ export default function TasksScreen() {
         </Pressable>
       </View>
 
+      <View style={styles.sortRow}>
+        <Pressable
+          style={[
+            styles.sortButton,
+            sortType === 'newest' && styles.activeSortButton,
+          ]}
+          onPress={() => setSortType('newest')}>
+          <Text
+            style={[
+              styles.sortButtonText,
+              sortType === 'newest' && styles.activeSortButtonText,
+            ]}>
+            Yeni Eklenen
+          </Text>
+        </Pressable>
+
+        <Pressable
+          style={[
+            styles.sortButton,
+            sortType === 'oldest' && styles.activeSortButton,
+          ]}
+          onPress={() => setSortType('oldest')}>
+          <Text
+            style={[
+              styles.sortButtonText,
+              sortType === 'oldest' && styles.activeSortButtonText,
+            ]}>
+            Eski Eklenen
+          </Text>
+        </Pressable>
+
+        <Pressable
+          style={[
+            styles.sortButton,
+            sortType === 'dueDate' && styles.activeSortButton,
+          ]}
+          onPress={() => setSortType('dueDate')}>
+          <Text
+            style={[
+              styles.sortButtonText,
+              sortType === 'dueDate' && styles.activeSortButtonText,
+            ]}>
+            Son Tarihe Göre
+          </Text>
+        </Pressable>
+      </View>
+
       {fetchingTasks ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" />
@@ -299,7 +363,7 @@ export default function TasksScreen() {
         </View>
       ) : (
         <FlatList
-          data={filteredTasks}
+         data={processedTasks} 
           keyExtractor={(item) => item.id}
           ListEmptyComponent={
             <View style={styles.emptyWrapper}>
@@ -608,5 +672,34 @@ dueTodayCard: {
   borderWidth: 1,
   borderColor: '#ffcc80',
   backgroundColor: '#fff8f0',
+},
+sortRow: {
+  flexDirection: 'row',
+  gap: 8,
+  marginBottom: 14,
+},
+sortButton: {
+  flex: 1,
+  paddingVertical: 10,
+  borderRadius: 10,
+  backgroundColor: '#f0f0f0',
+  alignItems: 'center',
+},
+activeSortButton: {
+  backgroundColor: '#222',
+},
+sortButtonText: {
+  color: '#333',
+  fontWeight: '600',
+  fontSize: 12,
+},
+activeSortButtonText: {
+  color: 'white',
+},
+dateHint: {
+  marginTop: -8,
+  marginBottom: 12,
+  fontSize: 12,
+  color: '#666',
 },
 });

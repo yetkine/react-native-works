@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import { auth, db } from '../../firebase/config';
 import { Task } from '../types/task';
+import { isPastDate, isValidDateFormat } from '../utils/dateValidation';
 
 export const fetchUserTasks = async (): Promise<Task[]> => {
   const user = auth.currentUser;
@@ -41,6 +42,14 @@ export const addTaskToFirestore = async (title: string, dueDate: string) => {
 
   if (!title.trim()) {
     throw new Error('Görev alanı boş bırakılamaz.');
+  }
+
+  if (dueDate && !isValidDateFormat(dueDate)) {
+    throw new Error('Tarih formatı YYYY-MM-DD olmalıdır.');
+  }
+
+  if (dueDate && isPastDate(dueDate)) {
+    throw new Error('Geçmiş bir tarih giremezsin.');
   }
 
   await addDoc(collection(db, 'tasks'), {
@@ -73,6 +82,14 @@ export const updateTaskTitleInFirestore = async (
 ) => {
   if (!newTitle.trim()) {
     throw new Error('Görev alanı boş bırakılamaz.');
+  }
+
+  if (dueDate && !isValidDateFormat(dueDate)) {
+    throw new Error('Tarih formatı YYYY-MM-DD olmalıdır.');
+  }
+
+  if (dueDate && isPastDate(dueDate)) {
+    throw new Error('Geçmiş bir tarih giremezsin.');
   }
 
   await updateDoc(doc(db, 'tasks', taskId), {
