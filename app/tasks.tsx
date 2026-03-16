@@ -15,6 +15,7 @@ import {
   addTaskToFirestore,
   deleteTaskFromFirestore,
   toggleTaskCompletedInFirestore,
+  updateTaskTitleInFirestore,
 } from './services/taskService';
 import CustomInput from './components/CustomInput';
 import PrimaryButton from './components/PrimaryButton';
@@ -28,6 +29,18 @@ export default function TasksScreen() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filterType, setFilterType] = useState<'all' | 'pending' | 'completed'>('all');
   const { user, authLoading } = useAuth();
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const handleEditTask = (taskId: string, currentTitle: string) => {
+    setTaskTitle(currentTitle);
+    setEditingTaskId(taskId);
+    setIsEditing(true);
+  };
+  const handleCancelEdit = () => {
+    setTaskTitle('');
+    setEditingTaskId(null);
+    setIsEditing(false);
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -82,7 +95,17 @@ export default function TasksScreen() {
   const handleAddTask = async () => {
     try {
       setLoading(true);
-      await addTaskToFirestore(taskTitle);
+
+      if (isEditing && editingTaskId) {
+        await updateTaskTitleInFirestore(editingTaskId, taskTitle);
+        Alert.alert('Başarılı', 'Görev güncellendi.');
+        setIsEditing(false);
+        setEditingTaskId(null);
+      } else {
+        await addTaskToFirestore(taskTitle);
+        Alert.alert('Başarılı', 'Görev Firestore’a kaydedildi.');
+      }
+
       setTaskTitle('');
       loadTasks();
     } catch (error: any) {
@@ -159,10 +182,24 @@ export default function TasksScreen() {
       />
 
       <PrimaryButton
-        title={loading ? 'Kaydediliyor...' : 'Görevi Kaydet'}
+        title={
+          loading
+            ? 'Kaydediliyor...'
+            : isEditing
+            ? 'Görevi Güncelle'
+            : 'Görevi Kaydet'
+        }
         onPress={handleAddTask}
         disabled={loading}
       />
+
+      {isEditing && (
+        <View style={styles.cancelEditWrapper}>
+          <Pressable style={styles.cancelEditButton} onPress={handleCancelEdit}>
+            <Text style={styles.cancelEditButtonText}>Düzenlemeyi İptal Et</Text>
+          </Pressable>
+        </View>
+      )}
 
       <CustomInput
         placeholder="Görevlerde ara..."
@@ -268,6 +305,12 @@ export default function TasksScreen() {
 
               <View style={styles.actionsRow}>
                 <Pressable
+                  style={[styles.smallButton, styles.editButton]}
+                  onPress={() => handleEditTask(item.id, item.title)}>
+                  <Text style={styles.smallButtonText}>Düzenle</Text>
+                </Pressable>
+
+                <Pressable
                   style={[styles.smallButton, styles.completeButton]}
                   onPress={() => handleToggleCompleted(item.id, item.completed)}>
                   <Text style={styles.smallButtonText}>
@@ -282,6 +325,7 @@ export default function TasksScreen() {
                 </Pressable>
               </View>
             </View>
+
           )}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
@@ -462,5 +506,22 @@ const styles = StyleSheet.create({
   },
   activeFilterButtonText: {
     color: 'white',
+  },
+  editButton: {
+    backgroundColor: '#4a67ff',
+  },
+  cancelEditWrapper: {
+    marginTop: 10,
+    marginBottom: 5,
+  },
+  cancelEditButton: {
+    backgroundColor: '#e8e8e8',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  cancelEditButtonText: {
+    color: '#333',
+    fontWeight: 'bold',
   },
 });

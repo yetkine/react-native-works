@@ -64,3 +64,16 @@ export const toggleTaskCompletedInFirestore = async (
     completed: !currentCompleted,
   });
 };
+
+export const updateTaskTitleInFirestore = async (
+  taskId: string,
+  newTitle: string
+) => {
+  if (!newTitle.trim()) {
+    throw new Error('Görev alanı boş bırakılamaz.');
+  }
+
+  await updateDoc(doc(db, 'tasks', taskId), {
+    title: newTitle,
+  });
+};
