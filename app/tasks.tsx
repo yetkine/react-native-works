@@ -33,13 +33,20 @@ export default function TasksScreen() {
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const { showToast } = useToast();
-  const handleEditTask = (taskId: string, currentTitle: string) => {
+  const [dueDate, setDueDate] = useState('');
+  const handleEditTask = (
+    taskId: string,
+    currentTitle: string,
+    currentDueDate?: string
+  ) => {
     setTaskTitle(currentTitle);
+    setDueDate(currentDueDate || '');
     setEditingTaskId(taskId);
     setIsEditing(true);
   };
   const handleCancelEdit = () => {
     setTaskTitle('');
+    setDueDate('');
     setEditingTaskId(null);
     setIsEditing(false);
   };
@@ -99,17 +106,18 @@ export default function TasksScreen() {
       setLoading(true);
 
       if (isEditing && editingTaskId) {
-        await updateTaskTitleInFirestore(editingTaskId, taskTitle);
-        showToast(
-          isEditing ? 'Görev güncellendi.' : 'Görev kaydedildi.',
-          'success'
-        );
+        await updateTaskTitleInFirestore(editingTaskId, taskTitle, dueDate);
+        showToast('Görev güncellendi.', 'success');
         setIsEditing(false);
         setEditingTaskId(null);
       } else {
-        await addTaskToFirestore(taskTitle);
-        Alert.alert('Başarılı', 'Görev Firestore’a kaydedildi.');
+        await addTaskToFirestore(taskTitle, dueDate);
+        showToast('Görev kaydedildi.', 'success');
       }
+
+      setTaskTitle('');
+      setDueDate('');
+      loadTasks();
 
       setTaskTitle('');
       loadTasks();
@@ -184,6 +192,12 @@ export default function TasksScreen() {
         placeholder="Yeni görev ekle..."
         value={taskTitle}
         onChangeText={setTaskTitle}
+      />
+
+      <CustomInput
+        placeholder="Son tarih (örn: 2026-03-20)"
+        value={dueDate}
+        onChangeText={setDueDate}
       />
 
       <PrimaryButton
@@ -287,13 +301,19 @@ export default function TasksScreen() {
           renderItem={({ item }) => (
             <View style={styles.taskCard}>
               <View style={styles.taskTopRow}>
-                <Text
-                  style={[
-                    styles.taskText,
-                    item.completed && styles.completedTaskText,
-                  ]}>
-                  {item.title}
-                </Text>
+                <View style={styles.taskContent}>
+                  <Text
+                    style={[
+                      styles.taskText,
+                      item.completed && styles.completedTaskText,
+                    ]}>
+                    {item.title}
+                  </Text>
+
+                  {item.dueDate ? (
+                    <Text style={styles.dueDateText}>Son tarih: {item.dueDate}</Text>
+                  ) : null}
+                </View>
 
                 <View
                   style={[
@@ -311,7 +331,7 @@ export default function TasksScreen() {
               <View style={styles.actionsRow}>
                 <Pressable
                   style={[styles.smallButton, styles.editButton]}
-                  onPress={() => handleEditTask(item.id, item.title)}>
+                  onPress={() => handleEditTask(item.id, item.title, item.dueDate)}>
                   <Text style={styles.smallButtonText}>Düzenle</Text>
                 </Pressable>
 
@@ -528,5 +548,13 @@ const styles = StyleSheet.create({
   cancelEditButtonText: {
     color: '#333',
     fontWeight: 'bold',
+  },
+  taskContent: {
+  flex: 1,
+},
+  dueDateText: {
+    marginTop: 6,
+    fontSize: 13,
+    color: '#666',
   },
 });

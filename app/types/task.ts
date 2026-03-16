@@ -4,4 +4,5 @@ export type Task = {
   completed: boolean;
   userId: string;
   userEmail: string;
+  dueDate?: string;
 };

@@ -32,7 +32,7 @@ export const fetchUserTasks = async (): Promise<Task[]> => {
   }));
 };
 
-export const addTaskToFirestore = async (title: string) => {
+export const addTaskToFirestore = async (title: string, dueDate: string) => {
   const currentUser = auth.currentUser;
 
   if (!currentUser) {
@@ -48,6 +48,7 @@ export const addTaskToFirestore = async (title: string) => {
     completed: false,
     userId: currentUser.uid,
     userEmail: currentUser.email || '',
+    dueDate: dueDate.trim(),
     createdAt: serverTimestamp(),
   });
 };
@@ -67,7 +68,8 @@ export const toggleTaskCompletedInFirestore = async (
 
 export const updateTaskTitleInFirestore = async (
   taskId: string,
-  newTitle: string
+  newTitle: string,
+  dueDate: string
 ) => {
   if (!newTitle.trim()) {
     throw new Error('Görev alanı boş bırakılamaz.');
@@ -75,5 +77,6 @@ export const updateTaskTitleInFirestore = async (
 
   await updateDoc(doc(db, 'tasks', taskId), {
     title: newTitle,
+    dueDate: dueDate.trim(),
   });
 };
