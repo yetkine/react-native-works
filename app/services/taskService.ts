@@ -9,6 +9,7 @@ import {
   deleteDoc,
   doc,
   updateDoc,
+  onSnapshot,
 } from 'firebase/firestore';
 import { auth, db } from '../../firebase/config';
 import { Task, TaskCategory } from '../types/task';
@@ -103,4 +104,32 @@ export const updateTaskTitleInFirestore = async (
     dueDate: dueDate.trim(),
     category,
   });
+};
+
+export const subscribeToUserTasks = (
+  callback: (tasks: Task[]) => void
+) => {
+  const user = auth.currentUser;
+
+  if (!user) {
+    callback([]);
+    return () => {};
+  }
+
+  const q = query(
+    collection(db, 'tasks'),
+    where('userId', '==', user.uid),
+    orderBy('createdAt', 'desc')
+  );
+
+  const unsubscribe = onSnapshot(q, (querySnapshot) => {
+    const tasks: Task[] = querySnapshot.docs.map((docItem) => ({
+      id: docItem.id,
+      ...(docItem.data() as Omit<Task, 'id'>),
+    }));
+
+    callback(tasks);
+  });
+
+  return unsubscribe;
 };

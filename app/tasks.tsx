@@ -12,11 +12,11 @@ import {
 import { Stack, router } from 'expo-router';
 import { Task, TaskCategory } from './types/task';
 import {
-  fetchUserTasks,
   addTaskToFirestore,
   deleteTaskFromFirestore,
   toggleTaskCompletedInFirestore,
   updateTaskTitleInFirestore,
+  subscribeToUserTasks,
 } from './services/taskService';
 import CustomInput from './components/CustomInput';
 import PrimaryButton from './components/PrimaryButton';
@@ -70,9 +70,16 @@ export default function TasksScreen() {
   }, [authLoading, user]);
 
   useEffect(() => {
-    if (user) {
-      loadTasks();
-    }
+    if (!user) return;
+
+    setFetchingTasks(true);
+
+    const unsubscribe = subscribeToUserTasks((liveTasks) => {
+      setTasks(liveTasks);
+      setFetchingTasks(false);
+    });
+
+    return () => unsubscribe();
   }, [user]);
 
   const processedTasks = useMemo(() => {
@@ -119,18 +126,6 @@ export default function TasksScreen() {
     [tasks]
   );
 
-  const loadTasks = async () => {
-    try {
-      setFetchingTasks(true);
-      const fetchedTasks = await fetchUserTasks();
-      setTasks(fetchedTasks);
-    } catch (error: any) {
-      Alert.alert('Listeleme Hatası', error.message);
-    } finally {
-      setFetchingTasks(false);
-    }
-  };
-
   const isOverdue = (dueDate?: string) => {
     if (!dueDate) return false;
 
@@ -166,10 +161,7 @@ export default function TasksScreen() {
       setTaskTitle('');
       setDueDate('');
       setCategory('Work');
-      loadTasks();
-
-      setTaskTitle('');
-      loadTasks();
+      
     } catch (error: any) {
       showToast(error.message, 'error');
     } finally {
@@ -180,7 +172,7 @@ export default function TasksScreen() {
   const handleDeleteTask = async (taskId: string) => {
     try {
       await deleteTaskFromFirestore(taskId);
-      loadTasks();
+      
     } catch (error: any) {
       showToast('Görev silindi.', 'success');
     }
@@ -192,7 +184,6 @@ export default function TasksScreen() {
   ) => {
     try {
       await toggleTaskCompletedInFirestore(taskId, currentCompleted);
-      loadTasks();
     } catch (error: any) {
       Alert.alert('Güncelleme Hatası', error.message);
     }
