@@ -9,7 +9,7 @@ import {
 import { router, Stack } from 'expo-router';
 import { logoutUser } from './services/authService';
 import useAuth from './hooks/useAuth';
-import { fetchUserTasks } from './services/taskService';
+import { subscribeToUserTasks } from './services/taskService';
 import { Task } from './types/task';
 import PrimaryButton from './components/PrimaryButton';
 
@@ -25,22 +25,18 @@ export default function ProfileScreen() {
   }, [authLoading, user]);
 
   useEffect(() => {
-    if (user) {
-      loadTasks();
-    }
+    if (!user) return;
+
+    setLoadingTasks(true);
+
+    const unsubscribe = subscribeToUserTasks((liveTasks) => {
+      setTasks(liveTasks);
+      setLoadingTasks(false);
+    });
+
+    return () => unsubscribe();
   }, [user]);
 
-  const loadTasks = async () => {
-    try {
-      setLoadingTasks(true);
-      const fetchedTasks = await fetchUserTasks();
-      setTasks(fetchedTasks);
-    } catch (error) {
-      console.log('Profile task fetch error:', error);
-    } finally {
-      setLoadingTasks(false);
-    }
-  };
 
   const completedCount = useMemo(
     () => tasks.filter((task) => task.completed).length,
