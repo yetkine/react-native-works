@@ -10,7 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { Task } from './types/task';
+import { Task, TaskCategory } from './types/task';
 import {
   fetchUserTasks,
   addTaskToFirestore,
@@ -39,19 +39,26 @@ export default function TasksScreen() {
   const [dueDate, setDueDate] = useState('');
   const [sortType, setSortType] = useState<'newest' | 'oldest' | 'dueDate'>('newest');
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [category, setCategory] = useState<TaskCategory>('Work');
+  const [categoryFilter, setCategoryFilter] = useState<
+  'All' | 'Work' | 'Personal' | 'Study'
+>('All');
   const handleEditTask = (
     taskId: string,
     currentTitle: string,
-    currentDueDate?: string
+    currentDueDate?: string,
+    currentCategory?: TaskCategory
   ) => {
     setTaskTitle(currentTitle);
     setDueDate(currentDueDate || '');
+    setCategory(currentCategory || 'Work');
     setEditingTaskId(taskId);
     setIsEditing(true);
   };
   const handleCancelEdit = () => {
     setTaskTitle('');
     setDueDate('');
+    setCategory('Work');
     setEditingTaskId(null);
     setIsEditing(false);
   };
@@ -79,6 +86,10 @@ export default function TasksScreen() {
       result = result.filter((task) => task.completed);
     }
 
+    if (categoryFilter !== 'All') {
+      result = result.filter((task) => task.category === categoryFilter);
+    }
+
     result = result.filter((task) =>
       task.title.toLowerCase().includes(searchText.toLowerCase())
     );
@@ -96,7 +107,7 @@ export default function TasksScreen() {
     }
 
     return result;
-  }, [tasks, searchText, filterType, sortType]);
+  }, [tasks, searchText, filterType, sortType, categoryFilter]);
 
   const completedCount = useMemo(
     () => tasks.filter((task) => task.completed).length,
@@ -143,17 +154,18 @@ export default function TasksScreen() {
       setLoading(true);
 
       if (isEditing && editingTaskId) {
-        await updateTaskTitleInFirestore(editingTaskId, taskTitle, dueDate);
+        await updateTaskTitleInFirestore(editingTaskId, taskTitle, dueDate, category);;
         showToast('Görev güncellendi.', 'success');
         setIsEditing(false);
         setEditingTaskId(null);
       } else {
-        await addTaskToFirestore(taskTitle, dueDate);
+        await await addTaskToFirestore(taskTitle, dueDate, category);
         showToast('Görev kaydedildi.', 'success');
       }
 
       setTaskTitle('');
       setDueDate('');
+      setCategory('Work');
       loadTasks();
 
       setTaskTitle('');
@@ -213,286 +225,399 @@ export default function TasksScreen() {
     }
   };
   return (
-    <View style={styles.container}>
-      <Stack.Screen options={{ title: 'Görevler' }} />
+<View style={styles.container}>
+  <Stack.Screen options={{ title: 'Görevler' }} />
 
-      <View style={styles.headerBlock}>
-        <Text style={styles.title}>Görevlerim</Text>
-        <Text style={styles.subtitle}>{user.email}</Text>
-      </View>
+  {fetchingTasks ? (
+    <View style={styles.centered}>
+      <ActivityIndicator size="large" />
+      <Text style={styles.infoText}>Görevler yükleniyor...</Text>
+    </View>
+  ) : (
+    <FlatList
+      data={processedTasks}
+      keyExtractor={(item) => item.id}
+      ListHeaderComponent={
+        <View>
+          <View style={styles.headerBlock}>
+            <Text style={styles.title}>Görevlerim</Text>
+            <Text style={styles.subtitle}>{user.email}</Text>
+          </View>
 
-      <View style={styles.summaryRow}>
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryNumber}>{tasks.length}</Text>
-          <Text style={styles.summaryLabel}>Toplam</Text>
-        </View>
-
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryNumber}>{pendingCount}</Text>
-          <Text style={styles.summaryLabel}>Bekleyen</Text>
-        </View>
-
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryNumber}>{completedCount}</Text>
-          <Text style={styles.summaryLabel}>Tamamlanan</Text>
-        </View>
-      </View>
-
-      <CustomInput
-        placeholder="Yeni görev ekle..."
-        value={taskTitle}
-        onChangeText={setTaskTitle}
-      />
-
-      <Text style={styles.dateHint}>Örnek: 2026-03-20</Text>
-
-      <View style={styles.datePickerWrapper}>
-        <Pressable
-          style={styles.datePickerButton}
-          onPress={() => setShowDatePicker(true)}>
-          <Text style={styles.datePickerButtonText}>
-            {dueDate ? `Son Tarih: ${dueDate}` : 'Son tarih seç'}
-          </Text>
-        </Pressable>
-
-        {dueDate ? (
-          <Pressable style={styles.clearDateButton} onPress={() => setDueDate('')}>
-            <Text style={styles.clearDateButtonText}>Tarihi Temizle</Text>
-          </Pressable>
-        ) : null}
-
-        {showDatePicker && (
-        <DateTimePicker
-          value={dueDate ? new Date(dueDate) : new Date()}
-          mode="date"
-          display="default"
-          onChange={handleDateChange}
-          minimumDate={new Date()}
-        />
-      )}
-      </View>
-
-    
-      <PrimaryButton
-        title={
-          loading
-            ? 'Kaydediliyor...'
-            : isEditing
-            ? 'Görevi Güncelle'
-            : 'Görevi Kaydet'
-        }
-        onPress={handleAddTask}
-        disabled={loading}
-      />
-
-      {isEditing && (
-        <View style={styles.cancelEditWrapper}>
-          <Pressable style={styles.cancelEditButton} onPress={handleCancelEdit}>
-            <Text style={styles.cancelEditButtonText}>Düzenlemeyi İptal Et</Text>
-          </Pressable>
-        </View>
-      )}
-
-      <CustomInput
-        placeholder="Görevlerde ara..."
-        value={searchText}
-        onChangeText={setSearchText}
-      />
-
-
-      <View style={styles.filterRow}>
-        <Pressable
-          style={[
-            styles.filterButton,
-            filterType === 'all' && styles.activeFilterButton,
-          ]}
-          onPress={() => setFilterType('all')}>
-          <Text
-            style={[
-              styles.filterButtonText,
-              filterType === 'all' && styles.activeFilterButtonText,
-            ]}>
-            Hepsi
-          </Text>
-        </Pressable>
-
-        <Pressable
-          style={[
-            styles.filterButton,
-            filterType === 'pending' && styles.activeFilterButton,
-          ]}
-          onPress={() => setFilterType('pending')}>
-          <Text
-            style={[
-              styles.filterButtonText,
-              filterType === 'pending' && styles.activeFilterButtonText,
-            ]}>
-            Açık
-          </Text>
-        </Pressable>
-
-        <Pressable
-          style={[
-            styles.filterButton,
-            filterType === 'completed' && styles.activeFilterButton,
-          ]}
-          onPress={() => setFilterType('completed')}>
-          <Text
-            style={[
-              styles.filterButtonText,
-              filterType === 'completed' && styles.activeFilterButtonText,
-            ]}>
-            Tamamlanan
-          </Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.sortRow}>
-        <Pressable
-          style={[
-            styles.sortButton,
-            sortType === 'newest' && styles.activeSortButton,
-          ]}
-          onPress={() => setSortType('newest')}>
-          <Text
-            style={[
-              styles.sortButtonText,
-              sortType === 'newest' && styles.activeSortButtonText,
-            ]}>
-            Yeni Eklenen
-          </Text>
-        </Pressable>
-
-        <Pressable
-          style={[
-            styles.sortButton,
-            sortType === 'oldest' && styles.activeSortButton,
-          ]}
-          onPress={() => setSortType('oldest')}>
-          <Text
-            style={[
-              styles.sortButtonText,
-              sortType === 'oldest' && styles.activeSortButtonText,
-            ]}>
-            Eski Eklenen
-          </Text>
-        </Pressable>
-
-        <Pressable
-          style={[
-            styles.sortButton,
-            sortType === 'dueDate' && styles.activeSortButton,
-          ]}
-          onPress={() => setSortType('dueDate')}>
-          <Text
-            style={[
-              styles.sortButtonText,
-              sortType === 'dueDate' && styles.activeSortButtonText,
-            ]}>
-            Son Tarihe Göre
-          </Text>
-        </Pressable>
-      </View>
-
-      {fetchingTasks ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" />
-          <Text style={styles.infoText}>Görevler yükleniyor...</Text>
-        </View>
-      ) : (
-        <FlatList
-         data={processedTasks} 
-          keyExtractor={(item) => item.id}
-          ListEmptyComponent={
-            <View style={styles.emptyWrapper}>
-              <Text style={styles.emptyEmoji}>📝</Text>
-              <Text style={styles.emptyDescription}>
-                {tasks.length === 0
-                  ? 'Yukarıdan ilk görevini ekleyerek başlayabilirsin.'
-                  : 'Arama kelimesini veya filtre seçimini değiştirebilirsin.'}
-              </Text>
-              <Text style={styles.emptyDescription}>
-                {tasks.length === 0
-                  ? 'Yukarıdan ilk görevini ekleyerek başlayabilirsin.'
-                  : 'Farklı bir kelime ile tekrar arama yapabilirsin.'}
-              </Text>
+          <View style={styles.summaryRow}>
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryNumber}>{tasks.length}</Text>
+              <Text style={styles.summaryLabel}>Toplam</Text>
             </View>
-          }
-          renderItem={({ item }) => (
+
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryNumber}>{pendingCount}</Text>
+              <Text style={styles.summaryLabel}>Bekleyen</Text>
+            </View>
+
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryNumber}>{completedCount}</Text>
+              <Text style={styles.summaryLabel}>Tamamlanan</Text>
+            </View>
+          </View>
+
+          <CustomInput
+            placeholder="Yeni görev ekle..."
+            value={taskTitle}
+            onChangeText={setTaskTitle}
+          />
+
+          <Text style={styles.dateHint}>Örnek: 2026-03-20</Text>
+
+          <View style={styles.datePickerWrapper}>
+            <Pressable
+              style={styles.datePickerButton}
+              onPress={() => setShowDatePicker(true)}>
+              <Text style={styles.datePickerButtonText}>
+                {dueDate ? `Son Tarih: ${dueDate}` : 'Son tarih seç'}
+              </Text>
+            </Pressable>
+
+            {dueDate ? (
+              <Pressable
+                style={styles.clearDateButton}
+                onPress={() => setDueDate('')}>
+                <Text style={styles.clearDateButtonText}>Tarihi Temizle</Text>
+              </Pressable>
+            ) : null}
+          </View>
+
+          <View style={styles.categoryRow}>
+            <Pressable
+              style={[
+                styles.categoryButton,
+                category === 'Work' && styles.activeCategoryButton,
+              ]}
+              onPress={() => setCategory('Work')}>
+              <Text
+                style={[
+                  styles.categoryButtonText,
+                  category === 'Work' && styles.activeCategoryButtonText,
+                ]}>
+                Work
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.categoryButton,
+                category === 'Personal' && styles.activeCategoryButton,
+              ]}
+              onPress={() => setCategory('Personal')}>
+              <Text
+                style={[
+                  styles.categoryButtonText,
+                  category === 'Personal' && styles.activeCategoryButtonText,
+                ]}>
+                Personal
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.categoryButton,
+                category === 'Study' && styles.activeCategoryButton,
+              ]}
+              onPress={() => setCategory('Study')}>
+              <Text
+                style={[
+                  styles.categoryButtonText,
+                  category === 'Study' && styles.activeCategoryButtonText,
+                ]}>
+                Study
+              </Text>
+            </Pressable>
+          </View>
+
+          <PrimaryButton
+            title={
+              loading
+                ? 'Kaydediliyor...'
+                : isEditing
+                ? 'Görevi Güncelle'
+                : 'Görevi Kaydet'
+            }
+            onPress={handleAddTask}
+            disabled={loading}
+          />
+
+          {isEditing && (
+            <View style={styles.cancelEditWrapper}>
+              <Pressable
+                style={styles.cancelEditButton}
+                onPress={handleCancelEdit}>
+                <Text style={styles.cancelEditButtonText}>
+                  Düzenlemeyi İptal Et
+                </Text>
+              </Pressable>
+            </View>
+          )}
+
+          <CustomInput
+            placeholder="Görevlerde ara..."
+            value={searchText}
+            onChangeText={setSearchText}
+          />
+
+          <View style={styles.filterRow}>
+            <Pressable
+              style={[
+                styles.filterButton,
+                filterType === 'all' && styles.activeFilterButton,
+              ]}
+              onPress={() => setFilterType('all')}>
+              <Text
+                style={[
+                  styles.filterButtonText,
+                  filterType === 'all' && styles.activeFilterButtonText,
+                ]}>
+                Hepsi
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.filterButton,
+                filterType === 'pending' && styles.activeFilterButton,
+              ]}
+              onPress={() => setFilterType('pending')}>
+              <Text
+                style={[
+                  styles.filterButtonText,
+                  filterType === 'pending' && styles.activeFilterButtonText,
+                ]}>
+                Açık
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.filterButton,
+                filterType === 'completed' && styles.activeFilterButton,
+              ]}
+              onPress={() => setFilterType('completed')}>
+              <Text
+                style={[
+                  styles.filterButtonText,
+                  filterType === 'completed' && styles.activeFilterButtonText,
+                ]}>
+                Tamamlanan
+              </Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.sortRow}>
+            <Pressable
+              style={[
+                styles.sortButton,
+                sortType === 'newest' && styles.activeSortButton,
+              ]}
+              onPress={() => setSortType('newest')}>
+              <Text
+                style={[
+                  styles.sortButtonText,
+                  sortType === 'newest' && styles.activeSortButtonText,
+                ]}>
+                Yeni Eklenen
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.sortButton,
+                sortType === 'oldest' && styles.activeSortButton,
+              ]}
+              onPress={() => setSortType('oldest')}>
+              <Text
+                style={[
+                  styles.sortButtonText,
+                  sortType === 'oldest' && styles.activeSortButtonText,
+                ]}>
+                Eski Eklenen
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.sortButton,
+                sortType === 'dueDate' && styles.activeSortButton,
+              ]}
+              onPress={() => setSortType('dueDate')}>
+              <Text
+                style={[
+                  styles.sortButtonText,
+                  sortType === 'dueDate' && styles.activeSortButtonText,
+                ]}>
+                Son Tarihe Göre
+              </Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.categoryFilterRow}>
+            <Pressable
+              style={[
+                styles.categoryFilterButton,
+                categoryFilter === 'All' && styles.activeCategoryFilterButton,
+              ]}
+              onPress={() => setCategoryFilter('All')}>
+              <Text
+                style={[
+                  styles.categoryFilterButtonText,
+                  categoryFilter === 'All' && styles.activeCategoryFilterButtonText,
+                ]}>
+                Hepsi
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.categoryFilterButton,
+                categoryFilter === 'Work' && styles.activeCategoryFilterButton,
+              ]}
+              onPress={() => setCategoryFilter('Work')}>
+              <Text
+                style={[
+                  styles.categoryFilterButtonText,
+                  categoryFilter === 'Work' && styles.activeCategoryFilterButtonText,
+                ]}>
+                Work
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.categoryFilterButton,
+                categoryFilter === 'Personal' && styles.activeCategoryFilterButton,
+              ]}
+              onPress={() => setCategoryFilter('Personal')}>
+              <Text
+                style={[
+                  styles.categoryFilterButtonText,
+                  categoryFilter === 'Personal' && styles.activeCategoryFilterButtonText,
+                ]}>
+                Personal
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.categoryFilterButton,
+                categoryFilter === 'Study' && styles.activeCategoryFilterButton,
+              ]}
+              onPress={() => setCategoryFilter('Study')}>
+              <Text
+                style={[
+                  styles.categoryFilterButtonText,
+                  categoryFilter === 'Study' && styles.activeCategoryFilterButtonText,
+                ]}>
+                Study
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      }
+      ListEmptyComponent={
+        <View style={styles.emptyWrapper}>
+          <Text style={styles.emptyEmoji}>📝</Text>
+          <Text style={styles.emptyTitle}>
+            {tasks.length === 0
+              ? 'Henüz görev eklenmedi'
+              : 'Bu filtreye uygun görev bulunamadı'}
+          </Text>
+          <Text style={styles.emptyDescription}>
+            {tasks.length === 0
+              ? 'Yukarıdan ilk görevini ekleyerek başlayabilirsin.'
+              : 'Arama, durum filtresi veya kategori seçimini değiştirebilirsin.'}
+          </Text>
+        </View>
+      }
+      renderItem={({ item }) => (
+        <View
+          style={[
+            styles.taskCard,
+            isOverdue(item.dueDate) && styles.overdueCard,
+            isDueToday(item.dueDate) && styles.dueTodayCard,
+          ]}>
+          <View style={styles.taskTopRow}>
+            <View style={styles.taskContent}>
+              <Text
+                style={[
+                  styles.taskText,
+                  item.completed && styles.completedTaskText,
+                ]}>
+                {item.title}
+              </Text>
+
+              {item.dueDate ? (
+                <Text
+                  style={[
+                    styles.dueDateText,
+                    isOverdue(item.dueDate) && styles.overdueText,
+                    isDueToday(item.dueDate) && styles.dueTodayText,
+                  ]}>
+                  {isOverdue(item.dueDate)
+                    ? `Gecikti: ${item.dueDate}`
+                    : isDueToday(item.dueDate)
+                    ? `Bugün: ${item.dueDate}`
+                    : `Son tarih: ${item.dueDate}`}
+                </Text>
+              ) : null}
+
+              {item.category ? (
+                <View style={styles.categoryBadge}>
+                  <Text style={styles.categoryBadgeText}>{item.category}</Text>
+                </View>
+              ) : null}
+            </View>
+
             <View
               style={[
-                styles.taskCard,
-                isOverdue(item.dueDate) && styles.overdueCard,
-                isDueToday(item.dueDate) && styles.dueTodayCard,
+                styles.statusBadge,
+                item.completed
+                  ? styles.completedBadge
+                  : styles.pendingBadge,
               ]}>
-              <View style={styles.taskTopRow}>
-                <View style={styles.taskContent}>
-                  <Text
-                    style={[
-                      styles.taskText,
-                      item.completed && styles.completedTaskText,
-                    ]}>
-                    {item.title}
-                  </Text>
-
-                  {item.dueDate ? (
-                    <Text
-                      style={[
-                        styles.dueDateText,
-                        isOverdue(item.dueDate) && styles.overdueText,
-                        isDueToday(item.dueDate) && styles.dueTodayText,
-                      ]}>
-                      {isOverdue(item.dueDate)
-                        ? `Gecikti: ${item.dueDate}`
-                        : isDueToday(item.dueDate)
-                        ? `Bugün: ${item.dueDate}`
-                        : `Son tarih: ${item.dueDate}`}
-                    </Text>
-                  ) : null}
-                </View>
-
-                <View
-                  style={[
-                    styles.statusBadge,
-                    item.completed
-                      ? styles.completedBadge
-                      : styles.pendingBadge,
-                  ]}>
-                  <Text style={styles.statusBadgeText}>
-                    {item.completed ? 'Bitti' : 'Açık'}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.actionsRow}>
-                <Pressable
-                  style={[styles.smallButton, styles.editButton]}
-                  onPress={() => handleEditTask(item.id, item.title, item.dueDate)}>
-                  <Text style={styles.smallButtonText}>Düzenle</Text>
-                </Pressable>
-
-                <Pressable
-                  style={[styles.smallButton, styles.completeButton]}
-                  onPress={() => handleToggleCompleted(item.id, item.completed)}>
-                  <Text style={styles.smallButtonText}>
-                    {item.completed ? 'Geri Al' : 'Tamamla'}
-                  </Text>
-                </Pressable>
-
-                <Pressable
-                  style={[styles.smallButton, styles.deleteButton]}
-                  onPress={() => handleDeleteTask(item.id)}>
-                  <Text style={styles.smallButtonText}>Sil</Text>
-                </Pressable>
-              </View>
+              <Text style={styles.statusBadgeText}>
+                {item.completed ? 'Bitti' : 'Açık'}
+              </Text>
             </View>
+          </View>
 
-          )}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-        />
+          <View style={styles.actionsRow}>
+            <Pressable
+              style={[styles.smallButton, styles.editButton]}
+              onPress={() =>
+                handleEditTask(item.id, item.title, item.dueDate, item.category)
+              }>
+              <Text style={styles.smallButtonText}>Düzenle</Text>
+            </Pressable>
+
+            <Pressable
+              style={[styles.smallButton, styles.completeButton]}
+              onPress={() => handleToggleCompleted(item.id, item.completed)}>
+              <Text style={styles.smallButtonText}>
+                {item.completed ? 'Geri Al' : 'Tamamla'}
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={[styles.smallButton, styles.deleteButton]}
+              onPress={() => handleDeleteTask(item.id)}>
+              <Text style={styles.smallButtonText}>Sil</Text>
+            </Pressable>
+          </View>
+        </View>
       )}
-    </View>
+      contentContainerStyle={styles.listContent}
+      showsVerticalScrollIndicator={false}
+    />
+  )}
+</View>
   );
 }
 
@@ -584,7 +709,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingTop: 20,
-    paddingBottom: 20,
+    paddingBottom: 30,
   },
   taskCard: {
     backgroundColor: '#f5f5f5',
@@ -761,5 +886,65 @@ clearDateButton: {
 clearDateButtonText: {
   color: '#c62828',
   fontWeight: '600',
+},
+categoryRow: {
+  flexDirection: 'row',
+  gap: 8,
+  marginBottom: 16,
+},
+categoryButton: {
+  flex: 1,
+  paddingVertical: 10,
+  borderRadius: 10,
+  backgroundColor: '#f0f0f0',
+  alignItems: 'center',
+},
+activeCategoryButton: {
+  backgroundColor: 'black',
+},
+categoryButtonText: {
+  color: '#333',
+  fontWeight: '600',
+  fontSize: 13,
+},
+activeCategoryButtonText: {
+  color: 'white',
+},
+categoryBadge: {
+  alignSelf: 'flex-start',
+  marginTop: 8,
+  backgroundColor: '#ececec',
+  paddingVertical: 5,
+  paddingHorizontal: 10,
+  borderRadius: 999,
+},
+categoryBadgeText: {
+  fontSize: 12,
+  fontWeight: 'bold',
+  color: '#333',
+},
+categoryFilterRow: {
+  flexDirection: 'row',
+  gap: 8,
+  marginBottom: 14,
+  flexWrap: 'wrap',
+},
+categoryFilterButton: {
+  paddingVertical: 10,
+  paddingHorizontal: 14,
+  borderRadius: 10,
+  backgroundColor: '#f0f0f0',
+  alignItems: 'center',
+},
+activeCategoryFilterButton: {
+  backgroundColor: '#111',
+},
+categoryFilterButtonText: {
+  color: '#333',
+  fontWeight: '600',
+  fontSize: 13,
+},
+activeCategoryFilterButtonText: {
+  color: 'white',
 },
 });

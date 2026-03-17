@@ -1,3 +1,5 @@
+export type TaskCategory = 'Work' | 'Personal' | 'Study';
+
 export type Task = {
   id: string;
   title: string;
@@ -5,4 +7,5 @@ export type Task = {
   userId: string;
   userEmail: string;
   dueDate?: string;
+  category?: TaskCategory;
 };

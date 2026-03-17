@@ -11,7 +11,7 @@ import {
   updateDoc,
 } from 'firebase/firestore';
 import { auth, db } from '../../firebase/config';
-import { Task } from '../types/task';
+import { Task, TaskCategory } from '../types/task';
 import { isPastDate, isValidDateFormat } from '../utils/dateValidation';
 
 export const fetchUserTasks = async (): Promise<Task[]> => {
@@ -33,7 +33,11 @@ export const fetchUserTasks = async (): Promise<Task[]> => {
   }));
 };
 
-export const addTaskToFirestore = async (title: string, dueDate: string) => {
+export const addTaskToFirestore = async (
+  title: string,
+  dueDate: string,
+  category: TaskCategory
+) => {
   const currentUser = auth.currentUser;
 
   if (!currentUser) {
@@ -58,6 +62,7 @@ export const addTaskToFirestore = async (title: string, dueDate: string) => {
     userId: currentUser.uid,
     userEmail: currentUser.email || '',
     dueDate: dueDate.trim(),
+    category,
     createdAt: serverTimestamp(),
   });
 };
@@ -78,7 +83,8 @@ export const toggleTaskCompletedInFirestore = async (
 export const updateTaskTitleInFirestore = async (
   taskId: string,
   newTitle: string,
-  dueDate: string
+  dueDate: string,
+  category: TaskCategory
 ) => {
   if (!newTitle.trim()) {
     throw new Error('Görev alanı boş bırakılamaz.');
@@ -95,5 +101,6 @@ export const updateTaskTitleInFirestore = async (
   await updateDoc(doc(db, 'tasks', taskId), {
     title: newTitle,
     dueDate: dueDate.trim(),
+    category,
   });
 };
